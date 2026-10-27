@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: lint + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt && pip install --no-deps -e . && pip install pytest pytest-asyncio ruff
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest -q
+
+  docker:
+    name: docker image builds and serves
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t graphrag-service .
+      - run: |
+          docker run -d --name gr -p 7860:7860 graphrag-service
+          for i in $(seq 1 30); do curl -sf localhost:7860/api/health && break || sleep 2; done
+          curl -sf localhost:7860/api/health
+          curl -sf -X POST localhost:7860/api/query -H 'content-type: application/json' \
+            -d '{"question":"Which university did the founder of Helios Robotics attend?","mode":"graphrag","llm":"mock"}' | grep -i answer

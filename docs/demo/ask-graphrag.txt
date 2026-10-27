@@ -1,0 +1,11 @@
+mode: graphrag (paths)   generator: mock-extractive
+
+context:
+  [d05] Voltix Batteries supplies Helios Robotics.
+  [d05] Anika Rao founded Voltix Batteries.
+  [d06] Anika Rao studied at Carnegie Mellon University.
+
+evidence:
+  Helios Robotics ←SUPPLIES— Voltix Batteries ←FOUNDED— Anika Rao →STUDIED_AT→ Carnegie Mellon University  (score 2.85)
+
+answer: Voltix Batteries supplies Helios Robotics. Anika Rao founded Voltix Batteries. Anika Rao studied at Carnegie Mellon University.

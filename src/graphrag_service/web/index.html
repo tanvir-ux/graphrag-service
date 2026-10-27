@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>graphrag-service: plain RAG vs GraphRAG</title>
+<style>
+  :root { --ink:#16202a; --muted:#5b6b7a; --line:#dde4ea; --bg:#f5f8fb; --card:#fff; --brand:#2457d6; --ok:#117a4d; --bad:#b3261e; --warn:#9a5b00; --orange:#e07b00; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:#0f2747; color:#fff; padding:28px 20px; }
+  header .in, main { max-width:1100px; margin:0 auto; padding:0 16px; }
+  h1 { margin:0 0 6px; font-size:26px; }
+  header p { margin:0; color:#c8d6ea; max-width:780px; }
+  main { padding-top:20px; padding-bottom:48px; display:grid; gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .card h2 { margin:0 0 8px; font-size:18px; }
+  .explain { border-left:4px solid var(--brand); }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:13px; border:1px solid var(--line); background:#eef3fa; }
+  .pill.live { background:#e4f6ec; color:var(--ok); border-color:#bfe6d0; }
+  .pill.replay { background:#fff4e0; color:var(--warn); border-color:#f2d9a8; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; align-items:center; }
+  button { font:inherit; cursor:pointer; border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 12px; color:var(--ink); text-align:left; }
+  button:hover { border-color:var(--brand); }
+  button.sel { background:#e8efff; border-color:var(--brand); }
+  button.primary { background:var(--brand); color:#fff; border-color:var(--brand); font-weight:600; text-align:center; }
+  button:disabled { opacity:.5; cursor:wait; }
+  input[type=text], select { font:inherit; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  input[type=text] { width:100%; }
+  input[type=text]:disabled { background:#f1f4f7; }
+  .cat { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:10px 0 0; }
+  .answer { background:#f0f6ff; border:1px solid #cfe0fb; border-radius:8px; padding:12px; }
+  .verdict { font-weight:600; margin:8px 0 0; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  .meta { color:var(--muted); font-size:14px; margin-top:6px; }
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); }
+  @media (max-width:520px) { .grid { grid-template-columns:1fr; } }
+  .ctx { border:1px solid var(--line); border-radius:8px; padding:6px 10px; margin:6px 0; font-size:14px; background:#fafcfe; }
+  .ctx .id { display:inline-block; font-size:11px; font-weight:700; background:#e5ebf2; border-radius:4px; padding:0 6px; margin-right:6px; }
+  .path { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; background:#eef3fa; border-radius:6px; padding:6px 8px; margin:6px 0; word-break:break-word; }
+  svg { width:100%; height:auto; border:1px solid var(--line); border-radius:8px; background:#fcfdff; }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; font-size:13px; margin:6px 0; color:var(--muted); }
+  .dot { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:4px; vertical-align:-1px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; } td,th { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  td.n, th.n { text-align:right; }
+  details { margin-top:8px; } summary { cursor:pointer; color:var(--brand); }
+  footer { color:var(--muted); font-size:14px; }
+  a { color:var(--brand); }
+</style>
+</head>
+<body>
+<header><div class="in">
+  <h1>graphrag-service</h1>
+  <p>Ask a question about a small made-up company ecosystem and see two retrieval methods answer it side by side: ordinary document search (RAG) and GraphRAG, which follows relationships in a knowledge graph.</p>
+</div></header>
+<main>
+  <section class="card explain">
+    <h2>What you are looking at</h2>
+    <p><b>RAG</b> (retrieval-augmented generation) lets an AI answer from your documents: it first <i>finds</i> the most relevant passages, then writes an answer from them. Ordinary RAG finds passages that <i>sound like</i> the question. That works for "Where is Helios Robotics headquartered?" but struggles with questions that need several facts chained together, such as "Which university did the founder of Helios Robotics attend?" (the founder and the university are in different documents).</p>
+    <p><b>GraphRAG</b> first turns the documents into a <b>knowledge graph</b> (people, companies and places as dots; relationships such as <i>founded</i> or <i>acquired</i> as lines) and then <i>walks along the lines</i> to collect exactly the chain of facts the question needs.</p>
+    <ol>
+      <li>Pick an example question (or type your own when the live service is running).</li>
+      <li>Press <b>Ask</b>. The left panel is ordinary RAG, the right panel is GraphRAG.</li>
+      <li>Compare what each retrieved, the evidence path, and whether the answer contains the expected facts. The graph at the bottom lights up the entities each method used.</li>
+    </ol>
+    <p class="meta">The answer writer here is a simple deterministic stand-in that only copies the most relevant sentences it was given, so the difference you see comes purely from <i>what was retrieved</i>. Nothing is invented. <span id="modepill" class="pill">checking…</span></p>
+  </section>
+
+  <section class="card">
+    <h2>1. Choose a question</h2>
+    <div id="examples"></div>
+    <div class="row"><input id="q" type="text" maxlength="300" placeholder="Your own question (live service only)"></div>
+    <div class="row">
+      <label>Plain RAG built with
+        <select id="backend">
+          <option value="vector_llamaindex">LlamaIndex</option>
+          <option value="vector_langchain">LangChain</option>
+          <option value="vector_native">native pipeline</option>
+        </select></label>
+      <label id="gemwrap" style="display:none"><input type="checkbox" id="gem"> Write answers with live Gemini (rate-limited)</label>
+      <button id="ask" class="primary">Ask</button>
+    </div>
+  </section>
+
+  <section class="grid" id="results" style="display:none">
+    <div class="card"><h2>Plain RAG <span class="pill" id="vname"></span></h2><div id="vout"></div></div>
+    <div class="card"><h2>GraphRAG <span class="pill" id="gname"></span></h2><div id="gout"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>The knowledge graph</h2>
+    <div class="legend" id="legend"></div>
+    <svg id="svg" viewBox="0 0 1000 620" role="img" aria-label="Knowledge graph"></svg>
+    <p class="meta">Blue = what GraphRAG walked through for the last question. Orange ring = entities mentioned in the passages that plain RAG retrieved. Hover a dot for its name; lines are labelled when GraphRAG used them.</p>
+  </section>
+
+  <section class="card">
+    <h2>Evaluation: 17 questions, 4 pipelines</h2>
+    <p class="meta">"Answer accuracy" = the answer contains every expected fact. "Doc recall" = share of the needed source documents that were retrieved. The questions were written by the same author as the graph retriever, so read the single-hop, multi-hop and global rows as a demonstration of <i>when graph retrieval helps</i>, not as a general benchmark. The <b>paraphrase</b> rows deliberately avoid the words the rule-based graph retriever knows, and that is where it breaks.</p>
+    <div id="evaltable"></div>
+    <details><summary>Show every question and answer</summary><div id="evalrows"></div></details>
+  </section>
+  <footer>Source code, tests and honest notes on what was run live vs mocked: <a href="https://github.com/tanvir-ux/graphrag-service">github.com/tanvir-ux/graphrag-service</a></footer>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const COLORS = {person:"#8e5bd6", organization:"#2457d6", place:"#1a9a6b", product:"#d98a00", university:"#c2417a"};
+const LABELS = {single_hop:"Single-hop (one fact)", multi_hop:"Multi-hop (chain of facts)", global:"Global (overview)", paraphrase:"Paraphrased (hard for the rule-based graph retriever)"};
+let live = false, rec = null, examples = null, graphData = null, selected = null, pos = {};
+
+async function init() {
+  try {
+    const r = await fetch("api/examples");
+    if (!r.ok) throw new Error("no api");
+    examples = await r.json(); graphData = await (await fetch("api/graph")).json();
+    live = true;
+  } catch (e) {
+    rec = await (await fetch("recordings.json")).json();
+    examples = rec.examples; graphData = rec.graph;
+  }
+  const pill = $("modepill");
+  pill.textContent = live ? "Live server" : "Recorded replay of real runs (example questions only)";
+  pill.className = "pill " + (live ? "live" : "replay");
+  $("q").disabled = !live;
+  if (!live) $("q").placeholder = "Free-text questions need the live server; use the examples above";
+  if (live && examples.gemini_enabled) $("gemwrap").style.display = "";
+  renderExamples(); layout(); drawGraph(null, null);
+  renderLegend();
+  const ev = live ? await (await fetch("api/eval")).json() : rec.eval;
+  renderEval(ev);
+  selectQuestion(examples.questions.find((q) => q.id === "q06"));
+}
+
+function renderExamples() {
+  const box = $("examples"); box.innerHTML = "";
+  for (const cat of Object.keys(LABELS)) {
+    const qs = examples.questions.filter((q) => q.category === cat);
+    if (!qs.length) continue;
+    box.insertAdjacentHTML("beforeend", `<p class="cat">${LABELS[cat]}</p>`);
+    const row = document.createElement("div"); row.className = "row";
+    for (const q of qs) {
+      const b = document.createElement("button"); b.textContent = q.text; b.dataset.id = q.id;
+      b.onclick = () => selectQuestion(q); row.appendChild(b);
+    }
+    box.appendChild(row);
+  }
+}
+function selectQuestion(q) {
+  selected = q; $("q").value = q.text;
+  document.querySelectorAll("#examples button").forEach((b) => b.classList.toggle("sel", b.dataset.id === q.id));
+}
+
+async function query(question, mode, useGemini) {
+  if (!live) {
+    const hit = rec.queries[mode + "::" + question];
+    if (!hit) throw new Error("This question is not in the recorded replay. Run the project locally for free-text questions.");
+    return hit;
+  }
+  const r = await fetch("api/query", {method:"POST", headers:{"content-type":"application/json"},
+    body: JSON.stringify({question, mode, llm: useGemini ? "gemini" : "mock"})});
+  if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+  return r.json();
+}
+
+function ctxHtml(list) {
+  return list.map((c) => `<div class="ctx"><span class="id">${esc(c.doc_id)}</span>${esc(c.text)}</div>`).join("") || "<p class='meta'>Nothing retrieved.</p>";
+}
+function verdict(question, answer) {
+  const gold = (examples.questions.find((q) => q.text === question) || {}).gold_answers;
+  if (!gold) return "";
+  const hits = gold.filter((g) => answer.toLowerCase().includes(g.toLowerCase()));
+  const ok = hits.length === gold.length;
+  return `<p class="verdict ${ok ? "ok" : "bad"}">${ok ? "✓" : "✗"} Expected: ${esc(gold.join(" + "))}${ok ? " (found in the answer)" : " (missing from the answer)"}</p>`;
+}
+function panel(res, graphPanel) {
+  let h = `<div class="answer">${esc(res.answer)}</div>${verdict(res.question, res.answer)}`;
+  if (graphPanel) {
+    h += `<h3>Evidence path${res.evidence.length > 1 ? "s" : ""}</h3>` +
+      (res.evidence.map((e) => `<div class="path">${esc(e)}</div>`).join("") || "<p class='meta'>No graph path matched this question, so nothing was retrieved from the graph.</p>");
+  }
+  h += `<h3>Retrieved passages (${res.contexts.length})</h3>${ctxHtml(res.contexts)}`;
+  h += `<p class="meta">Strategy: ${esc(res.strategy)} · generator: ${esc(res.llm)} · ${res.latency_ms} ms</p>`;
+  const spans = (res.trace || []).map((t) => `${t.kind}: ${t.name} @${t.t_ms}ms`);
+  if (spans.length) h += `<details><summary>Trace (${spans.length} spans)</summary><div class="path">${spans.map(esc).join("<br>")}</div></details>`;
+  return h;
+}
+
+async function ask() {
+  const question = $("q").value.trim(); if (question.length < 3) return;
+  const btn = $("ask"); btn.disabled = true; btn.textContent = "Working…";
+  $("results").style.display = "";
+  try {
+    const backend = $("backend").value, gem = $("gem").checked;
+    const [v, g] = await Promise.all([query(question, backend, gem), query(question, "graphrag", gem)]);
+    $("vname").textContent = backend.replace("vector_", ""); $("gname").textContent = "graph + communities";
+    $("vout").innerHTML = panel(v, false); $("gout").innerHTML = panel(g, true);
+    drawGraph(g.graph, v.contexts);
+  } catch (e) {
+    $("vout").innerHTML = $("gout").innerHTML = `<p class="bad">${esc(e.message)}</p>`;
+  }
+  btn.disabled = false; btn.textContent = "Ask";
+}
+$("ask").onclick = ask;
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+
+function renderLegend() {
+  $("legend").innerHTML = Object.entries(COLORS).map(([k, c]) => `<span><span class="dot" style="background:${c}"></span>${k}</span>`).join("");
+}
+
+// Force-directed layout (Fruchterman-Reingold), deterministic start so the picture is stable.
+function layout() {
+  const W = 1000, H = 620, nodes = graphData.nodes, n = nodes.length;
+  const idx = Object.fromEntries(nodes.map((d, i) => [d.id, i]));
+  const sorted = [...nodes].sort((a, b) => (a.community - b.community) || a.id.localeCompare(b.id));
+  const p = sorted.map((d, i) => ({id: d.id, x: W/2 + 260*Math.cos(2*Math.PI*i/n), y: H/2 + 220*Math.sin(2*Math.PI*i/n), dx:0, dy:0}));
+  const byId = Object.fromEntries(p.map((q) => [q.id, q]));
+  const k = Math.sqrt((W * H) / n) * 0.75;
+  for (let it = 0; it < 400; it++) {
+    const t = 12 * (1 - it / 400) + 0.5;
+    p.forEach((a) => { a.dx = 0; a.dy = 0; });
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const a = p[i], b = p[j]; let dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy) || 0.01;
+      const f = (k * k) / d; a.dx += dx / d * f; a.dy += dy / d * f; b.dx -= dx / d * f; b.dy -= dy / d * f;
+    }
+    for (const e of graphData.edges) {
+      const a = byId[e.source], b = byId[e.target]; let dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy) || 0.01;
+      const f = (d * d) / k; a.dx -= dx / d * f; a.dy -= dy / d * f; b.dx += dx / d * f; b.dy += dy / d * f;
+    }
+    p.forEach((a) => {
+      a.dx += (W/2 - a.x) * 0.02; a.dy += (H/2 - a.y) * 0.02;
+      const d = Math.hypot(a.dx, a.dy) || 0.01;
+      a.x = Math.min(W - 70, Math.max(70, a.x + a.dx / d * Math.min(d, t)));
+      a.y = Math.min(H - 30, Math.max(30, a.y + a.dy / d * Math.min(d, t)));
+    });
+  }
+  pos = byId; void idx;
+}
+
+function drawGraph(hl, vectorCtx) {
+  const svg = $("svg"), hiNodes = new Set(hl ? hl.nodes : []);
+  const hiEdges = new Set((hl ? hl.edges : []).map((e) => e.source + "|" + e.target + "|" + e.relation));
+  const text = (vectorCtx || []).map((c) => c.text).join(" ");
+  const vecNodes = new Set(graphData.nodes.filter((d) => text.includes(d.id)).map((d) => d.id));
+  const any = hiNodes.size > 0;
+  let s = `<defs><marker id="ar" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9aa8b6"/></marker><marker id="arh" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2457d6"/></marker></defs>`;
+  let labels = "";
+  for (const e of graphData.edges) {
+    const a = pos[e.source], b = pos[e.target], on = hiEdges.has(e.source + "|" + e.target + "|" + e.relation);
+    s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${on ? "#2457d6" : "#c3ccd6"}" stroke-width="${on ? 3 : 1.2}" opacity="${any && !on ? 0.35 : 1}" marker-end="url(#${on ? "arh" : "ar"})"/>`;
+    if (on) labels += `<text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 4}" font-size="11" fill="#2457d6" text-anchor="middle" font-weight="700" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(e.relation.toLowerCase().replace(/_/g, " "))}</text>`;
+  }
+  for (const d of graphData.nodes) {
+    const q = pos[d.id], on = hiNodes.has(d.id), v = vecNodes.has(d.id);
+    s += `<g opacity="${any && !on && !v ? 0.45 : 1}"><title>${esc(d.id)} (${d.type})</title>` +
+      (v ? `<circle cx="${q.x}" cy="${q.y}" r="15" fill="none" stroke="#e07b00" stroke-width="3" stroke-dasharray="4 3"/>` : "") +
+      `<circle cx="${q.x}" cy="${q.y}" r="${on ? 11 : 9}" fill="${COLORS[d.type] || "#888"}" stroke="${on ? "#0f2747" : "#fff"}" stroke-width="${on ? 3 : 2}"/>` +
+      `<text x="${q.x}" y="${q.y + 26}" font-size="11.5" text-anchor="middle" fill="#16202a" font-weight="${on ? 700 : 400}" paint-order="stroke" stroke="#fcfdff" stroke-width="3">${esc(d.id)}</text></g>`;
+  }
+  svg.innerHTML = s + labels;
+}
+
+function renderEval(ev) {
+  const modes = Object.keys(ev.summary), cats = ["single_hop", "multi_hop", "global", "paraphrase", "all"];
+  let h = `<table><tr><th>Pipeline</th>` + cats.map((c) => `<th class="n">${c.replace("_", "-")}</th>`).join("") + `</tr>`;
+  for (const m of modes) {
+    h += `<tr><td>${esc(m)}</td>` + cats.map((c) => {
+      const x = ev.summary[m][c]; return x ? `<td class="n">${Math.round(x.answer_accuracy * 100)}% <span class="meta">/ ${Math.round(x.doc_recall * 100)}%</span></td>` : "<td></td>";
+    }).join("") + `</tr>`;
+  }
+  $("evaltable").innerHTML = h + `</table><p class="meta">Each cell: answer accuracy / doc recall. Generator: ${esc(ev.llm)}.</p>`;
+  const gm = ev.rows.filter((r) => r.mode === "graphrag" || r.mode === "vector_llamaindex");
+  $("evalrows").innerHTML = `<table><tr><th>Question</th><th>Pipeline</th><th>Correct</th><th>Answer</th></tr>` +
+    gm.map((r) => `<tr><td>${esc(r.question)}</td><td>${esc(r.mode)}</td><td class="${r.answer_correct ? "ok" : "bad"}">${r.answer_correct ? "✓" : "✗"}</td><td>${esc(r.answer)}</td></tr>`).join("") + `</table>`;
+}
+init();
+</script>
+</body>
+</html>

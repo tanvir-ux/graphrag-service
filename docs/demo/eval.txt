@@ -1,0 +1,24 @@
+Generator: `mock-extractive`, 17 questions.
+
+| pipeline | category | n | doc recall | answer accuracy | avg context chars |
+|---|---|---|---|---|---|
+| vector_native | single_hop | 5 | 1.00 | 1.00 | 483 |
+| vector_native | multi_hop | 7 | 0.74 | 0.43 | 551 |
+| vector_native | global | 2 | 0.62 | 0.00 | 534 |
+| vector_native | paraphrase | 3 | 0.50 | 0.00 | 547 |
+| vector_native | all | 17 | 0.76 | 0.47 | 528 |
+| vector_llamaindex | single_hop | 5 | 1.00 | 1.00 | 483 |
+| vector_llamaindex | multi_hop | 7 | 0.81 | 0.43 | 553 |
+| vector_llamaindex | global | 2 | 0.46 | 0.00 | 540 |
+| vector_llamaindex | paraphrase | 3 | 0.50 | 0.00 | 545 |
+| vector_llamaindex | all | 17 | 0.77 | 0.47 | 530 |
+| vector_langchain | single_hop | 5 | 1.00 | 1.00 | 483 |
+| vector_langchain | multi_hop | 7 | 0.74 | 0.43 | 551 |
+| vector_langchain | global | 2 | 0.62 | 0.00 | 534 |
+| vector_langchain | paraphrase | 3 | 0.50 | 0.00 | 547 |
+| vector_langchain | all | 17 | 0.76 | 0.47 | 528 |
+| graphrag | single_hop | 5 | 1.00 | 1.00 | 50 |
+| graphrag | multi_hop | 7 | 1.00 | 1.00 | 126 |
+| graphrag | global | 2 | 1.00 | 1.00 | 734 |
+| graphrag | paraphrase | 3 | 0.17 | 0.33 | 197 |
+| graphrag | all | 17 | 0.85 | 0.88 | 188 |

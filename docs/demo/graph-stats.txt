@@ -1,0 +1,11 @@
+26 entities, 30 relations, 5 communities
+
+[1] Community 1 covers organizations: Voltix Batteries; people: Anika Rao; places: Reno; products: Atlas Arm, Voltix Cells; universities: Carnegie Mellon University. Anika Rao founded Voltix Batteries. Voltix Batteries is located in Reno. Voltix Batteries manufactures Voltix Cells. Anika Rao studied at Carnegie Mellon University. Anika Rao leads Voltix Batteries. Atlas Arm uses Voltix Cells.
+
+[2] Community 2 covers organizations: Helios Robotics; people: Maria Chen; places: Austin; universities: Stanford University. Maria Chen founded Helios Robotics. Helios Robotics is headquartered in Austin. Maria Chen studied at Stanford University.
+
+[3] Community 3 covers organizations: Nimbus Vision; people: Tomas Ruiz; places: Boston; universities: Massachusetts Institute of Technology. Tomas Ruiz founded Nimbus Vision. Nimbus Vision is located in Boston. Tomas Ruiz studied at Massachusetts Institute of Technology.
+
+[4] Community 4 covers organizations: Greenfield Capital; people: Sofia Marin; places: New York; universities: Columbia University. Greenfield Capital is headquartered in New York. Sofia Marin works at Greenfield Capital. Sofia Marin studied at Columbia University.
+
+[5] Community 5 covers organizations: Mars Survey Institute, Northwind Labs; people: Daniel Okafor; places: Pasadena, Seattle; products: Orbit Rover, Quanta Chip; universities: University of Washington. Orbit Rover uses Quanta Chip. Mars Survey Institute uses Orbit Rover. Mars Survey Institute is located in Pasadena. Mars Survey Institute partnered with Northwind Labs. Daniel Okafor founded Northwind Labs. Northwind Labs is headquartered in Seattle. Northwind Labs manufactures Quanta Chip. Daniel Okafor studied at University of Washington.

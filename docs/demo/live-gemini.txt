@@ -1,0 +1,33 @@
+live Gemini check, model=gemini-3.1-flash-lite, 2026-10-27 02:43 EDT
+
+q06 Which university did the founder of Helios Robotics attend?
+  expected: Stanford University
+  vector_llamaindex  OK  'The founder of Helios Robotics, Maria Chen, attended Stanford University.'
+  graphrag           OK  'The founder of Helios Robotics, Maria Chen, attended Stanford University.'
+
+q07 Which university did the founder of the company that supplies Helios Robotics attend?
+  expected: Carnegie Mellon University
+  vector_llamaindex  MISS 'The context does not provide information about the university attended by the founder of Voltix Batteries.'
+  graphrag           OK  'Anika Rao, the founder of Voltix Batteries, attended Carnegie Mellon University.'
+
+q08 In which city is the company that Helios Robotics acquired based?
+  expected: Boston
+  vector_llamaindex  OK  'The company Helios Robotics acquired, Nimbus Vision, is based in Boston.'
+  graphrag           OK  'Nimbus Vision is based in Boston.'
+
+q09 Who invested in both Helios Robotics and Voltix Batteries?
+  expected: Greenfield Capital
+  vector_llamaindex  OK  'Greenfield Capital invested in both Helios Robotics and Voltix Batteries.'
+  graphrag           OK  'Greenfield Capital invested in both Helios Robotics and Voltix Batteries.'
+
+q12 Which university did the founder of the company that Helios Robotics acquired attend?
+  expected: Massachusetts Institute of Technology
+  vector_llamaindex  MISS 'The context does not provide information about the university attended by the founder of Nimbus Vision.'
+  graphrag           OK  'The founder of the company Helios Robotics acquired attended the Massachusetts Institute of Technology.'
+
+q13 Give an overview of the companies connected to Helios Robotics.
+  expected: Nimbus Vision + Voltix Batteries + Northwind Labs + Greenfield Capital
+  vector_llamaindex  MISS 'Helios Robotics is connected to Greenfield Capital, which is a venture capital firm that invested in the company.'
+  graphrag           OK  'Helios Robotics is connected to Atlas Arm and Orbit Rover (manufactured products), Nimbus Vision (acquired), Voltix Batteries (supplier), Northwind Labs (partner), and Greenfield Capital (investor).'
+
+correct answers: 9/12 (errors count as not correct)
